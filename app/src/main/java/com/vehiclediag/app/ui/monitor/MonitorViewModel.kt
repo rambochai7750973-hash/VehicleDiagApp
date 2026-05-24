@@ -4,12 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vehiclediag.app.data.model.CanMessage
 import com.vehiclediag.app.data.repository.VehicleRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlin.math.minOf
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 data class MonitorUiState(
     val messages: List<CanMessage> = emptyList(),
@@ -67,6 +66,7 @@ class MonitorViewModel(
     private fun startPolling() {
         pollJob?.cancel()
         pollJob = viewModelScope.launch {
+            var failures = 0
             while (true) {
                 repository.getMonitorMessages().onSuccess { response ->
                     _uiState.value = _uiState.value.copy(
@@ -74,13 +74,17 @@ class MonitorViewModel(
                         isLoading = false,
                         error = null,
                     )
+                    failures = 0
+                    delay(1000)
                 }.onFailure { e ->
+                    failures++
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = e.message,
                     )
+                    val backoff = minOf(failures * 1000L, 10000L)
+                    delay(backoff)
                 }
-                delay(1000)
             }
         }
     }
@@ -88,5 +92,10 @@ class MonitorViewModel(
     override fun onCleared() {
         super.onCleared()
         pollJob?.cancel()
+        if (_uiState.value.isMonitoring) {
+            CoroutineScope(Dispatchers.IO).launch {
+                repository.stopMonitor()
+            }
+        }
     }
 }

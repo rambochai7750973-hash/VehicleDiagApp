@@ -7,12 +7,11 @@ import com.vehiclediag.app.data.model.PidDef
 import com.vehiclediag.app.data.model.PidLiveData
 import com.vehiclediag.app.data.model.ProtocolList
 import com.vehiclediag.app.data.repository.VehicleRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlin.math.minOf
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 data class DashboardUiState(
     val deviceStatus: DeviceStatus = DeviceStatus(),
@@ -24,6 +23,7 @@ data class DashboardUiState(
     val isLoading: Boolean = false,
     val isPidPolling: Boolean = false,
     val error: String? = null,
+    val statusError: String? = null,
     val protocolError: String? = null,
     val pingError: String? = null,
 )
@@ -58,11 +58,11 @@ class DashboardViewModel(
         repository.getStatus().onSuccess { status ->
             _uiState.value = _uiState.value.copy(
                 deviceStatus = status,
-                error = null,
+                statusError = null,
             )
         }.onFailure { e ->
             _uiState.value = _uiState.value.copy(
-                error = e.message ?: "获取设备状态失败",
+                statusError = e.message ?: "获取设备状态失败",
             )
         }
     }
@@ -114,8 +114,9 @@ class DashboardViewModel(
 
         viewModelScope.launch {
             repository.startPidPolling(pidList).onSuccess {
-                _uiState.value = _uiState.value.copy(isPidPolling = true, error = null)
+                pollingJob?.cancel()
                 pollingJob = viewModelScope.launch {
+                    var failures = 0
                     while (true) {
                         repository.getLivePidData().onSuccess { data ->
                             _uiState.value = _uiState.value.copy(
@@ -123,15 +124,20 @@ class DashboardViewModel(
                                 isLoading = false,
                                 error = null,
                             )
+                            failures = 0
+                            delay(2000)
                         }.onFailure { e ->
+                            failures++
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 error = e.message,
                             )
+                            val backoff = minOf(failures * 1000L, 10000L)
+                            delay(backoff)
                         }
-                        delay(2000)
                     }
                 }
+                _uiState.value = _uiState.value.copy(isPidPolling = true, error = null)
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
@@ -144,7 +150,9 @@ class DashboardViewModel(
         _uiState.value = _uiState.value.copy(isPidPolling = false)
 
         viewModelScope.launch {
-            repository.stopPidPolling()
+            repository.stopPidPolling().onFailure { e ->
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
         }
     }
 
@@ -164,5 +172,10 @@ class DashboardViewModel(
         super.onCleared()
         pollingJob?.cancel()
         statusJob?.cancel()
+        if (_uiState.value.isPidPolling) {
+            CoroutineScope(Dispatchers.IO).launch {
+                repository.stopPidPolling()
+            }
+        }
     }
 }

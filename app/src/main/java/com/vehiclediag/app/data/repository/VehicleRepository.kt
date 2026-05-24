@@ -50,8 +50,19 @@ class VehicleRepository {
                 response.body()?.let { Result.success(it) }
                     ?: Result.failure(Exception("Empty response body"))
             } else {
-                Result.failure(Exception("HTTP ${response.code()}: ${response.message()}"))
+                val errorBody = try { response.errorBody()?.string() } catch (_: Exception) { null }
+                val msg = if (!errorBody.isNullOrBlank()) "服务器返回错误: $errorBody"
+                          else "HTTP ${response.code()}: ${response.message()}"
+                Result.failure(Exception(msg))
             }
+        } catch (e: com.google.gson.JsonParseException) {
+            Result.failure(Exception("设备返回了非JSON数据，请检查设备连接状态"))
+        } catch (e: java.net.ConnectException) {
+            Result.failure(Exception("无法连接到设备，请检查WiFi连接"))
+        } catch (e: java.net.SocketTimeoutException) {
+            Result.failure(Exception("请求超时，设备可能正忙"))
+        } catch (e: java.net.UnknownHostException) {
+            Result.failure(Exception("设备地址不存在，请检查IP设置"))
         } catch (e: Exception) {
             Result.failure(e)
         }

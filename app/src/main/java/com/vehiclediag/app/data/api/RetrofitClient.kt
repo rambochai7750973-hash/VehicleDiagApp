@@ -1,5 +1,6 @@
 package com.vehiclediag.app.data.api
 
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -13,6 +14,10 @@ object RetrofitClient {
     private var baseUrl = "http://192.168.4.1"
     private var retrofit: Retrofit? = null
     private var apiService: ApiService? = null
+
+    private val gson = GsonBuilder()
+        .setLenient()
+        .create()
 
     private val okHttpClient: OkHttpClient by lazy {
         val logging = HttpLoggingInterceptor().apply {
@@ -41,7 +46,7 @@ object RetrofitClient {
             retrofit = Retrofit.Builder()
                 .baseUrl(normalizedUrl)
                 .client(okHttpClient)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .build()
             apiService = retrofit!!.create(ApiService::class.java)
         }

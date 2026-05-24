@@ -60,6 +60,10 @@ class DashboardViewModel(
                 deviceStatus = status,
                 error = null,
             )
+        }.onFailure { e ->
+            _uiState.value = _uiState.value.copy(
+                error = e.message ?: "获取设备状态失败",
+            )
         }
     }
 
@@ -67,6 +71,10 @@ class DashboardViewModel(
         viewModelScope.launch {
             repository.getPidDefs().onSuccess { defs ->
                 _uiState.value = _uiState.value.copy(pidDefs = defs)
+            }.onFailure { e ->
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "获取PID定义失败",
+                )
             }
         }
     }
@@ -97,7 +105,12 @@ class DashboardViewModel(
     fun startPidPolling() {
         if (_uiState.value.isPidPolling) return
         val pidList = _uiState.value.pidDefs.map { it.pid }
-        if (pidList.isEmpty()) return
+        if (pidList.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                error = "未加载到PID定义，请确认设备连接",
+            )
+            return
+        }
 
         viewModelScope.launch {
             repository.startPidPolling(pidList).onSuccess {

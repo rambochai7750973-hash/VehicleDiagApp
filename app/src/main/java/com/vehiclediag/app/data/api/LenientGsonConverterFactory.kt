@@ -3,6 +3,7 @@ package com.vehiclediag.app.data.api
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParseException
+import com.vehiclediag.app.data.model.ApiResponse
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Converter
@@ -43,6 +44,9 @@ class LenientGsonConverterFactory private constructor(
             val raw = try { value.string() } catch (e: Exception) { null }
             if (raw.isNullOrBlank()) {
                 throw JsonParseException("设备返回了空响应")
+            }
+            if (raw.trim() == "OK" && type == ApiResponse::class.java) {
+                return ApiResponse(success = true, message = "OK")
             }
             return try {
                 delegate.convert(

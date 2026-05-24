@@ -36,7 +36,6 @@ class DashboardViewModel(
 
     private var pollingJob: Job? = null
     private var statusJob: Job? = null
-    private val lastValidValues = mutableMapOf<Int, PidLiveData>()
 
     fun initialize() {
         loadPidDefs()
@@ -124,6 +123,11 @@ class DashboardViewModel(
             return
         }
 
+        _uiState.value = _uiState.value.copy(
+            livePidData = emptyList(), // Clear old data, only show real-time data
+            error = null,
+        )
+
         viewModelScope.launch {
             repository.startPidPolling(pidList).onSuccess {
                 pollingJob?.cancel()
@@ -132,19 +136,12 @@ class DashboardViewModel(
                     while (true) {
                         repository.getLivePidData().onSuccess { data ->
                             failures = 0
-                            if (data.isNotEmpty()) {
-                                data.forEach { if (it.valid) lastValidValues[it.pid] = it }
-                                val mergedData = data.map { pid ->
-                                    if (!pid.valid) {
-                                        lastValidValues[pid.pid]?.copy(valid = false) ?: pid
-                                    } else pid
-                                }
-                                _uiState.value = _uiState.value.copy(
-                                    livePidData = mergedData,
-                                    isLoading = false,
-                                    error = null,
-                                )
-                            }
+                            val validData = data.filter { it.valid }
+                            _uiState.value = _uiState.value.copy(
+                                livePidData = validData,
+                                isLoading = false,
+                                error = null,
+                            )
                             delay(1000)
                         }.onFailure { e ->
                             failures++

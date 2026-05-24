@@ -118,7 +118,7 @@ fun MonitorScreen(
             Text("数据", color = TextDim, modifier = Modifier.weight(1f), fontSize = 11.sp)
         }
 
-        HorizontalDivider(color = CardBorder)
+        Divider(color = CardBorder)
 
         if (uiState.messages.isEmpty()) {
             Box(
@@ -174,5 +174,5 @@ private fun MonitorMessageRow(message: CanMessage) {
         Text(dataStr, color = TextPrimary, modifier = Modifier.weight(1f), fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
     }
 
-    HorizontalDivider(color = CardBorder.copy(alpha = 0.3f))
+    Divider(color = CardBorder.copy(alpha = 0.3f))
 }

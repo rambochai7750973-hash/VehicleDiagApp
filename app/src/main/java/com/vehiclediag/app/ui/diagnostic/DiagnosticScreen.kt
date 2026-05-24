@@ -130,7 +130,7 @@ private fun DtcSection(uiState: DiagnosticUiState, viewModel: DiagnosticViewMode
         if (allDtc.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            HorizontalDivider(color = CardBorder)
+            Divider(color = CardBorder)
 
             allDtc.forEach { dtc ->
                 Spacer(modifier = Modifier.height(4.dp))

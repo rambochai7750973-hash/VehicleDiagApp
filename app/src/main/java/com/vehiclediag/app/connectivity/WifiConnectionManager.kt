@@ -74,7 +74,7 @@ class WifiConnectionManager(private val context: Context) {
             val specifier = WifiNetworkSpecifier.Builder()
                 .setSsid(ssid)
                 .setWpa2Passphrase(password)
-                .setSsidPatternMatcher(PatternMatcher(ssid, PatternMatcher.PATTERN_PREFIX))
+                .setSsidPattern(PatternMatcher(ssid, PatternMatcher.PATTERN_PREFIX))
                 .build()
 
             val request = NetworkRequest.Builder()

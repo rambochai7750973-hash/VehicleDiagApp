@@ -75,7 +75,7 @@ class SettingsViewModel(
             _uiState.value = _uiState.value.copy(isTestingConnection = true, testResult = "测试中...")
             val results = mutableListOf<String>()
             // 测试多个关键端点
-            for (endpoint in listOf("/api/status", "/api/protocol", "/api/pids/defs", "/api/ping")) {
+            for (endpoint in listOf("/api/status", "/api/protocol", "/api/pids/defs", "/api/ping", "/api/monitor")) {
                 RetrofitClient.rawGet(endpoint).onSuccess { raw ->
                     results.add("=== $endpoint ===\n$raw\n")
                 }.onFailure { e ->

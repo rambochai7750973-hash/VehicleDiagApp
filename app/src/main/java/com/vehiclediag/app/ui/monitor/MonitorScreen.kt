@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -158,10 +157,8 @@ fun MonitorScreen(
 private fun MonitorMessageRow(message: CanMessage) {
     val direction = if (message.rx) "←RX" else "→TX"
     val directionColor = if (message.rx) AccentGreen else AccentRed
-    val hexId = "0x${message.id.toString(16).uppercase().padStart(3, '0')}"
-    val dataStr = message.data.joinToString(" ") { byte: Int ->
-        byte.toString(16).uppercase().padStart(2, '0')
-    }
+    val canId = "0x${message.id.uppercase().trim()}"
+    val dataStr = message.data.trim()
 
     Row(
         modifier = Modifier
@@ -169,9 +166,9 @@ private fun MonitorMessageRow(message: CanMessage) {
             .padding(horizontal = 12.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(message.time, color = TextDim, modifier = Modifier.width(70.dp), fontSize = 11.sp)
+        Text(message.time.toString(), color = TextDim, modifier = Modifier.width(70.dp), fontSize = 11.sp)
         Text(direction, color = directionColor, modifier = Modifier.width(35.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Text(hexId, color = TextSecondary, modifier = Modifier.width(70.dp), fontSize = 11.sp)
+        Text(canId, color = TextSecondary, modifier = Modifier.width(70.dp), fontSize = 11.sp)
         Text(
             text = dataStr,
             modifier = Modifier.weight(1f),

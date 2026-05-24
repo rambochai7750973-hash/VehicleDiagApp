@@ -3,10 +3,10 @@ package com.vehiclediag.app.data.model
 import com.google.gson.annotations.SerializedName
 
 data class CanMessage(
-    @SerializedName("id") val id: Int,
+    @SerializedName("id") val id: String,
     @SerializedName("rx") val rx: Boolean,
-    @SerializedName("time") val time: String,
-    @SerializedName("data") val data: List<Int>,
+    @SerializedName("time") val time: Int,
+    @SerializedName("data") val data: String,
 )
 
 data class MonitorResponse(

@@ -7,7 +7,6 @@ import com.vehiclediag.app.data.model.PidDef
 import com.vehiclediag.app.data.model.PidLiveData
 import com.vehiclediag.app.data.model.ProtocolList
 import com.vehiclediag.app.data.repository.VehicleRepository
-import kotlin.math.minOf
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -132,7 +131,7 @@ class DashboardViewModel(
                                 isLoading = false,
                                 error = e.message,
                             )
-                            val backoff = minOf(failures * 1000L, 10000L)
+                            val backoff = (failures * 1000L).coerceAtMost(10000L)
                             delay(backoff)
                         }
                     }

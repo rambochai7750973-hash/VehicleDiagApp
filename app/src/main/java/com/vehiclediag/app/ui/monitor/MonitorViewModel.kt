@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vehiclediag.app.data.model.CanMessage
 import com.vehiclediag.app.data.repository.VehicleRepository
-import kotlin.math.minOf
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,7 +81,7 @@ class MonitorViewModel(
                         isLoading = false,
                         error = e.message,
                     )
-                    val backoff = minOf(failures * 1000L, 10000L)
+                    val backoff = (failures * 1000L).coerceAtMost(10000L)
                     delay(backoff)
                 }
             }

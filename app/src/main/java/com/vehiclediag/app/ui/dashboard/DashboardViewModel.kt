@@ -43,6 +43,11 @@ class DashboardViewModel(
         startStatusPolling()
     }
 
+    fun retryLoad() {
+        if (_uiState.value.pidDefs.isEmpty()) loadPidDefs()
+        if (_uiState.value.protocolList == null) loadProtocols()
+    }
+
     private fun startStatusPolling() {
         statusJob?.cancel()
         statusJob = viewModelScope.launch {
@@ -68,12 +73,19 @@ class DashboardViewModel(
 
     private fun loadPidDefs() {
         viewModelScope.launch {
-            repository.getPidDefs().onSuccess { defs ->
-                _uiState.value = _uiState.value.copy(pidDefs = defs)
-            }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "获取PID定义失败",
-                )
+            var attempts = 0
+            while (attempts < 3 && _uiState.value.pidDefs.isEmpty()) {
+                attempts++
+                repository.getPidDefs().onSuccess { defs ->
+                    _uiState.value = _uiState.value.copy(pidDefs = defs)
+                }.onFailure { e ->
+                    if (attempts >= 3) {
+                        _uiState.value = _uiState.value.copy(
+                            error = e.message ?: "获取PID定义失败",
+                        )
+                    }
+                    delay(2000)
+                }
             }
         }
     }

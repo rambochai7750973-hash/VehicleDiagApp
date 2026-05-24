@@ -13,17 +13,15 @@ object RetrofitClient {
     private var retrofit: Retrofit? = null
     private var apiService: ApiService? = null
 
-    private val okHttpClient: OkHttpClient by lazy {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+    private var _okHttpClient: OkHttpClient? = null
+
+    private val okHttpClient: OkHttpClient
+        get() {
+            if (_okHttpClient == null) {
+                _okHttpClient = buildOkHttpClient()
+            }
+            return _okHttpClient!!
         }
-        OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(5, TimeUnit.SECONDS)
-            .build()
-    }
 
     fun updateBaseUrl(url: String) {
         val normalizedUrl = if (url.endsWith("/")) url else "$url/"
@@ -31,7 +29,21 @@ object RetrofitClient {
             baseUrl = normalizedUrl
             retrofit = null
             apiService = null
+            _okHttpClient = null
         }
+    }
+
+    private fun buildOkHttpClient(): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        return OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+            .build()
     }
 
     fun getApiService(): ApiService {

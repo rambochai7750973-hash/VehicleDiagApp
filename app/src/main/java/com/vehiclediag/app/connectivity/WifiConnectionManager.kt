@@ -10,6 +10,7 @@ import android.net.wifi.WifiManager
 import android.net.wifi.WifiNetworkSpecifier
 import android.os.Build
 import android.os.PatternMatcher
+import com.vehiclediag.app.data.api.RetrofitClient
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,7 @@ class WifiConnectionManager(private val context: Context) {
     val connectionState: StateFlow<WifiConnectionState> = _connectionState.asStateFlow()
 
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var currentNetwork: Network? = null
 
     val isWifiConnected: Flow<Boolean> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
@@ -85,9 +87,15 @@ class WifiConnectionManager(private val context: Context) {
                 .build()
 
             networkCallback?.let { connectivityManager.unregisterNetworkCallback(it) }
+            currentNetwork = null
 
             networkCallback = object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
+                    currentNetwork = network
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        connectivityManager.bindProcessToNetwork(network)
+                    }
+                    RetrofitClient.updateBaseUrl(ip)
                     _connectionState.value = WifiConnectionState(
                         isConnected = true,
                         ssid = ssid,
@@ -96,6 +104,10 @@ class WifiConnectionManager(private val context: Context) {
                 }
 
                 override fun onLost(network: Network) {
+                    currentNetwork = null
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        connectivityManager.bindProcessToNetwork(null)
+                    }
                     _connectionState.value = WifiConnectionState(
                         isConnected = false,
                         deviceIp = ip,
@@ -116,6 +128,7 @@ class WifiConnectionManager(private val context: Context) {
                 wifiManager.disconnect()
                 wifiManager.enableNetwork(netId, true)
                 wifiManager.reconnect()
+                RetrofitClient.updateBaseUrl(ip)
                 _connectionState.value = WifiConnectionState(
                     isConnected = true,
                     ssid = ssid,
@@ -130,10 +143,15 @@ class WifiConnectionManager(private val context: Context) {
             connectivityManager.unregisterNetworkCallback(it)
             networkCallback = null
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            connectivityManager.bindProcessToNetwork(null)
+        }
+        currentNetwork = null
         _connectionState.value = WifiConnectionState()
     }
 
     fun updateDeviceIp(ip: String) {
         _connectionState.value = _connectionState.value.copy(deviceIp = ip)
+        RetrofitClient.updateBaseUrl(ip)
     }
 }

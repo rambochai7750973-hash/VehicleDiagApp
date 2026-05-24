@@ -52,7 +52,6 @@ class SettingsViewModel(
                 connectionStatus = "正在连接...",
             )
             RetrofitClient.updateBaseUrl(state.deviceIp)
-            // 先测试状态端点，确认设备可达
             RetrofitClient.rawGet("/api/status").onSuccess { raw ->
                 _uiState.value = _uiState.value.copy(
                     isConnected = true,

@@ -1,5 +1,7 @@
 package com.vehiclediag.app.data.api
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -44,5 +46,20 @@ object RetrofitClient {
             apiService = retrofit!!.create(ApiService::class.java)
         }
         return apiService!!
+    }
+
+    suspend fun rawGet(endpoint: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val url = if (baseUrl.endsWith("/")) "$baseUrl${endpoint.removePrefix("/")}" else "$baseUrl/${endpoint.removePrefix("/")}"
+            val request = okhttp3.Request.Builder()
+                .url(url)
+                .build()
+            val response = okHttpClient.newCall(request).execute()
+            val body = response.body?.string() ?: "(empty body)"
+            val headers = response.headers.joinToString("\n") { "${it.first}: ${it.second}" }
+            Result.success("HTTP ${response.code()}\n${headers}\n\n${body}")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

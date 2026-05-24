@@ -41,6 +41,8 @@ fun SettingsScreen(
 
         ConnectionSection(uiState, viewModel)
         Spacer(modifier = Modifier.height(16.dp))
+        ApiTestSection(uiState, viewModel)
+        Spacer(modifier = Modifier.height(16.dp))
         LogSection(uiState, viewModel)
     }
 }
@@ -120,11 +122,85 @@ private fun ConnectionSection(uiState: SettingsUiState, viewModel: SettingsViewM
                     }
                 }
 
+                if (uiState.isTestingConnection) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.width(80.dp),
+                        color = AccentRed,
+                        trackColor = DarkCard,
+                    )
+                }
+
                 if (uiState.connectionStatus.isNotEmpty()) {
                     Text(
                         text = uiState.connectionStatus,
-                        color = if (uiState.isConnected) AccentGreen else TextDim,
+                        color = if (uiState.isConnected) AccentGreen else AccentRed,
                         style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            uiState.connectionError?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error,
+                    color = AccentRed,
+                    fontSize = 12.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ApiTestSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "接口诊断",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = AccentRed,
+                )
+                Button(
+                    onClick = { viewModel.testApi() },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Text("测试API", fontSize = 12.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (uiState.isTestingConnection) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = AccentRed,
+                    trackColor = DarkCard,
+                )
+            }
+
+            if (uiState.testResult.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
+                    colors = CardDefaults.cardColors(containerColor = DarkBackground),
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Text(
+                        text = uiState.testResult,
+                        color = TextSecondary,
+                        fontFamily = FontFamily.Monospace,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(12.dp).verticalScroll(rememberScrollState()),
                     )
                 }
             }

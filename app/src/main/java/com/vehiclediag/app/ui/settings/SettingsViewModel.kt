@@ -18,6 +18,9 @@ data class SettingsUiState(
     val isLoadingLog: Boolean = false,
     val logError: String? = null,
     val connectionStatus: String = "",
+    val connectionError: String? = null,
+    val isTestingConnection: Boolean = false,
+    val testResult: String = "",
 )
 
 class SettingsViewModel(
@@ -41,12 +44,50 @@ class SettingsViewModel(
     }
 
     fun connect() {
-        val state = _uiState.value
-        RetrofitClient.updateBaseUrl(state.deviceIp)
-        _uiState.value = _uiState.value.copy(
-            isConnected = true,
-            connectionStatus = "已连接至 ${state.deviceSsid}",
-        )
+        viewModelScope.launch {
+            val state = _uiState.value
+            _uiState.value = _uiState.value.copy(
+                isTestingConnection = true,
+                connectionError = null,
+                connectionStatus = "正在连接...",
+            )
+            RetrofitClient.updateBaseUrl(state.deviceIp)
+            // 先测试状态端点，确认设备可达
+            RetrofitClient.rawGet("/api/status").onSuccess { raw ->
+                _uiState.value = _uiState.value.copy(
+                    isConnected = true,
+                    isTestingConnection = false,
+                    connectionStatus = "已连接至 ${state.deviceSsid}",
+                    connectionError = null,
+                )
+            }.onFailure { e ->
+                _uiState.value = _uiState.value.copy(
+                    isConnected = false,
+                    isTestingConnection = false,
+                    connectionStatus = "连接失败",
+                    connectionError = "设备无响应: ${e.message}",
+                )
+            }
+        }
+    }
+
+    fun testApi() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isTestingConnection = true, testResult = "测试中...")
+            val results = mutableListOf<String>()
+            // 测试多个关键端点
+            for (endpoint in listOf("/api/status", "/api/protocol", "/api/pids/defs", "/api/ping")) {
+                RetrofitClient.rawGet(endpoint).onSuccess { raw ->
+                    results.add("=== $endpoint ===\n$raw\n")
+                }.onFailure { e ->
+                    results.add("=== $endpoint ===\n请求失败: ${e.message}\n")
+                }
+            }
+            _uiState.value = _uiState.value.copy(
+                isTestingConnection = false,
+                testResult = results.joinToString("\n"),
+            )
+        }
     }
 
     fun disconnect() {

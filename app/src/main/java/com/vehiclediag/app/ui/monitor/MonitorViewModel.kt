@@ -31,6 +31,7 @@ class MonitorViewModel(
                 _uiState.value = _uiState.value.copy(
                     isMonitoring = true,
                     error = null,
+                    messages = emptyList(), // Clear messages for real-time data only
                 )
                 startPolling()
             }.onFailure { e ->
@@ -68,8 +69,11 @@ class MonitorViewModel(
             var failures = 0
             while (true) {
                 repository.getMonitorMessages().onSuccess { response ->
+                    val newMessages = response.messages
+                    val currentMessages = _uiState.value.messages
+                    val combinedMessages = (currentMessages + newMessages).takeLast(50)
                     _uiState.value = _uiState.value.copy(
-                        messages = response.messages,
+                        messages = combinedMessages,
                         isLoading = false,
                         error = null,
                     )

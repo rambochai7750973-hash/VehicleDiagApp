@@ -146,6 +146,7 @@ private fun StatusItem(label: String, value: String, color: Color) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProtocolSelector(
     protocolList: com.vehiclediag.app.data.model.ProtocolList?,

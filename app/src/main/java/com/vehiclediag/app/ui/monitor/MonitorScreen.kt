@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vehiclediag.app.data.model.CanMessage
 import com.vehiclediag.app.ui.theme.*
 
 @Composable
@@ -158,7 +159,7 @@ private fun MonitorMessageRow(message: CanMessage) {
     val direction = if (message.rx) "←RX" else "→TX"
     val directionColor = if (message.rx) AccentGreen else AccentRed
     val hexId = "0x${message.id.toString(16).uppercase().padStart(3, '0')}"
-    val dataStr = message.data.joinToString(" ") { byte ->
+    val dataStr = message.data.joinToString(" ") { byte: Int ->
         byte.toString(16).uppercase().padStart(2, '0')
     }
 
@@ -171,7 +172,13 @@ private fun MonitorMessageRow(message: CanMessage) {
         Text(message.time, color = TextDim, modifier = Modifier.width(70.dp), fontSize = 11.sp)
         Text(direction, color = directionColor, modifier = Modifier.width(35.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold)
         Text(hexId, color = TextSecondary, modifier = Modifier.width(70.dp), fontSize = 11.sp)
-        Text(dataStr, color = TextPrimary, modifier = Modifier.weight(1f), fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+        Text(
+            text = dataStr,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            ),
+        )
     }
 
     Divider(color = CardBorder.copy(alpha = 0.3f))

@@ -57,7 +57,7 @@ object RetrofitClient {
             val response = okHttpClient.newCall(request).execute()
             val body = response.body?.string() ?: "(empty body)"
             val headers = response.headers.joinToString("\n") { "${it.first}: ${it.second}" }
-            Result.success("HTTP ${response.code()}\n${headers}\n\n${body}")
+            Result.success("HTTP ${response.code}\n${headers}\n\n${body}")
         } catch (e: Exception) {
             Result.failure(e)
         }

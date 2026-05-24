@@ -5,7 +5,9 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonParseException
 import com.vehiclediag.app.data.model.ApiResponse
 import com.vehiclediag.app.data.model.MonitorResponse
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import retrofit2.Converter
 import retrofit2.Retrofit
@@ -24,7 +26,8 @@ class LenientGsonConverterFactory private constructor(
         methodAnnotations: Array<out Annotation>,
         retrofit: Retrofit,
     ): Converter<*, RequestBody>? {
-        return delegate.requestBodyConverter(type, parameterAnnotations, methodAnnotations, retrofit)
+        val adapter = gson.getAdapter(com.google.gson.reflect.TypeToken.get(type))
+        return GsonRequestBodyConverter(adapter)
     }
 
     override fun responseBodyConverter(
@@ -43,6 +46,15 @@ class LenientGsonConverterFactory private constructor(
     private object StringBodyConverter : Converter<ResponseBody, String> {
         override fun convert(value: ResponseBody): String {
             return value.string()
+        }
+    }
+
+    private class GsonRequestBodyConverter<T>(
+        private val adapter: com.google.gson.TypeAdapter<T>,
+    ) : Converter<T, RequestBody> {
+        override fun convert(value: T): RequestBody {
+            val json = adapter.toJson(value)
+            return json.toRequestBody(JSON_MEDIA_TYPE)
         }
     }
 
@@ -87,6 +99,8 @@ class LenientGsonConverterFactory private constructor(
     }
 
     companion object {
+        private val JSON_MEDIA_TYPE = "application/json; charset=UTF-8".toMediaType()
+
         fun create(): LenientGsonConverterFactory {
             val gson = GsonBuilder().setLenient().create()
             return LenientGsonConverterFactory(gson)

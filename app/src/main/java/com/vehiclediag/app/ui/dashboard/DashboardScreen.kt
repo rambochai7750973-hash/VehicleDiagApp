@@ -268,7 +268,7 @@ private fun PollingControls(
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            text = if (isPolling) "每2秒刷新..." else "已停止",
+            text = if (isPolling) "每1秒刷新..." else "已停止",
             color = if (isPolling) AccentGreen else TextDim,
             style = MaterialTheme.typography.bodySmall,
         )
@@ -308,14 +308,24 @@ private fun PidDataGrid(
 
 @Composable
 private fun PidCard(pid: PidLiveData) {
-    val textColor = if (pid.valid) TextPrimary else TextDim
+    val hasValue = pid.value != 0f || pid.valid
+    val textColor = when {
+        pid.valid -> TextPrimary
+        hasValue -> TextDim
+        else -> TextDim
+    }
+    val unitColor = when {
+        pid.valid -> AccentRed
+        hasValue -> TextDim.copy(alpha = 0.5f)
+        else -> TextDim
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp),
         colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (pid.valid) CardBorder else CardBorder.copy(alpha = 0.3f)),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -329,7 +339,9 @@ private fun PidCard(pid: PidLiveData) {
             )
 
             Text(
-                text = if (pid.valid) String.format("%.1f", pid.value) else "---",
+                text = if (pid.valid) String.format("%.1f", pid.value)
+                       else if (hasValue) String.format("%.1f", pid.value)
+                       else "---",
                 color = textColor,
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp,
@@ -337,7 +349,7 @@ private fun PidCard(pid: PidLiveData) {
 
             Text(
                 text = pid.unit,
-                color = if (pid.valid) AccentRed else TextDim,
+                color = unitColor,
                 style = MaterialTheme.typography.bodySmall,
             )
         }

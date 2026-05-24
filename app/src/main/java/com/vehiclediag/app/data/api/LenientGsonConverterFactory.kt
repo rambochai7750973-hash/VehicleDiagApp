@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParseException
 import com.vehiclediag.app.data.model.ApiResponse
+import com.vehiclediag.app.data.model.MonitorResponse
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Converter
@@ -45,8 +46,8 @@ class LenientGsonConverterFactory private constructor(
             if (raw.isNullOrBlank()) {
                 throw JsonParseException("设备返回了空响应")
             }
-            if (raw.trim() == "OK" && type == ApiResponse::class.java) {
-                return ApiResponse(success = true, message = "OK")
+            if (raw.trim() == "OK") {
+                return defaultForType(type)
             }
             return try {
                 delegate.convert(
@@ -57,6 +58,21 @@ class LenientGsonConverterFactory private constructor(
                 throw JsonParseException(
                     "设备返回了非JSON数据 (${raw.length}字节): $preview"
                 )
+            }
+        }
+
+        private fun defaultForType(type: Type): Any? {
+            return when (type) {
+                ApiResponse::class.java -> ApiResponse(success = true, message = "OK")
+                MonitorResponse::class.java -> MonitorResponse(enabled = true, messages = emptyList())
+                else -> {
+                    val rawType = if (type is java.lang.reflect.ParameterizedType) type.rawType else type
+                    if (rawType == ApiResponse::class.java || rawType == MonitorResponse::class.java) {
+                        defaultForType(rawType)
+                    } else {
+                        throw JsonParseException("设备返回了 'OK'，但期望的是JSON数据: $type")
+                    }
+                }
             }
         }
     }

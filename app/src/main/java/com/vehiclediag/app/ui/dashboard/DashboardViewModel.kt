@@ -131,18 +131,20 @@ class DashboardViewModel(
                     var failures = 0
                     while (true) {
                         repository.getLivePidData().onSuccess { data ->
-                            data.forEach { if (it.valid) lastValidValues[it.pid] = it }
-                            val mergedData = data.map { pid ->
-                                if (!pid.valid) {
-                                    lastValidValues[pid.pid]?.copy(valid = false) ?: pid
-                                } else pid
-                            }
-                            _uiState.value = _uiState.value.copy(
-                                livePidData = mergedData,
-                                isLoading = false,
-                                error = null,
-                            )
                             failures = 0
+                            if (data.isNotEmpty()) {
+                                data.forEach { if (it.valid) lastValidValues[it.pid] = it }
+                                val mergedData = data.map { pid ->
+                                    if (!pid.valid) {
+                                        lastValidValues[pid.pid]?.copy(valid = false) ?: pid
+                                    } else pid
+                                }
+                                _uiState.value = _uiState.value.copy(
+                                    livePidData = mergedData,
+                                    isLoading = false,
+                                    error = null,
+                                )
+                            }
                             delay(1000)
                         }.onFailure { e ->
                             failures++

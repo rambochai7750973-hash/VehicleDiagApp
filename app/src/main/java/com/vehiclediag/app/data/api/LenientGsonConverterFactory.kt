@@ -3,6 +3,7 @@ package com.vehiclediag.app.data.api
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParseException
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Converter
 import retrofit2.Retrofit
@@ -15,11 +16,16 @@ class LenientGsonConverterFactory private constructor(
 
     private val delegate: Converter.Factory = GsonConverterFactory.create(gson)
 
-    override fun responseBodyConverter(
+    override fun requestBodyConverter(
         type: Type,
-        annotations: Array<out Annotation>,
+        parameterAnnotations: Array<out Annotation>,
+        methodAnnotations: Array<out Annotation>,
         retrofit: Retrofit,
-    ): Converter<ResponseBody, *>? {
+    ): Converter<*, RequestBody>? {
+        return delegate.requestBodyConverter(type, parameterAnnotations, methodAnnotations, retrofit)
+    }
+
+    override fun responseBodyConverter(
         val delegateConverter = delegate.responseBodyConverter(type, annotations, retrofit)
             ?: return null
         return SafeResponseBodyConverter(delegateConverter, type)

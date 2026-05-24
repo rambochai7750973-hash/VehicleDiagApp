@@ -56,7 +56,7 @@ class VehicleRepository {
                 Result.failure(Exception(msg))
             }
         } catch (e: com.google.gson.JsonParseException) {
-            Result.failure(Exception("设备返回了非JSON数据，请检查设备连接状态"))
+            Result.failure(Exception(e.message ?: "设备返回了非JSON数据，请检查设备连接状态"))
         } catch (e: java.net.ConnectException) {
             Result.failure(Exception("无法连接到设备，请检查WiFi连接"))
         } catch (e: java.net.SocketTimeoutException) {

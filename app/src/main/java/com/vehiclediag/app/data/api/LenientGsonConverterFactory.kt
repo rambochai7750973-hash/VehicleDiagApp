@@ -26,6 +26,10 @@ class LenientGsonConverterFactory private constructor(
     }
 
     override fun responseBodyConverter(
+        type: Type,
+        annotations: Array<Annotation>,
+        retrofit: Retrofit,
+    ): Converter<ResponseBody, *>? {
         val delegateConverter = delegate.responseBodyConverter(type, annotations, retrofit)
             ?: return null
         return SafeResponseBodyConverter(delegateConverter, type)
